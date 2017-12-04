@@ -145,7 +145,7 @@ def write_metrics(metrics, output_dir):
   """
   tf.logging.info('Writing metrics.')
 
-  with open(os.path.join(output_dir, "metrics_at_IoU_{0}.csv".format(FLAGS.IoU), 'w') as csvfile:
+  with open(os.path.join(output_dir, "metrics_at_IoU_{0}.csv".format(FLAGS.IoU)), 'w') as csvfile:
     metrics_writer = csv.writer(csvfile, delimiter=',')
     for metric_name, metric_value in metrics.items():
       metrics_writer.writerow([metric_name, str(metric_value)])
