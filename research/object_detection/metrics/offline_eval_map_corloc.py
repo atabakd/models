@@ -50,6 +50,8 @@ flags.DEFINE_string('eval_config_path', None,
                     'Path to an eval_pb2.EvalConfig config file.')
 flags.DEFINE_string('input_config_path', None,
                     'Path to an eval_pb2.InputConfig config file.')
+flags.DEFINE_float('IoU', 0.5,
+                    'Desired IoU to calculate the metrics')
 
 FLAGS = flags.FLAGS
 
