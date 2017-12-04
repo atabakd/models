@@ -99,7 +99,7 @@ def read_data_and_evaluate(input_config, eval_config):
         label_map, max_num_classes)
 
     object_detection_evaluators = evaluator.get_evaluators(
-        eval_config, categories)
+        eval_config, categories, IoU=FLAGS.IoU)
     # Support a single evaluator
     object_detection_evaluator = object_detection_evaluators[0]
 
