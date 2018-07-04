@@ -35,6 +35,7 @@ import csv
 import os
 import re
 import tensorflow as tf
+import pandas as pd
 
 from object_detection import evaluator
 from object_detection.core import standard_fields
@@ -50,11 +51,8 @@ flags.DEFINE_string('eval_config_path', None,
                     'Path to an eval_pb2.EvalConfig config file.')
 flags.DEFINE_string('input_config_path', None,
                     'Path to an eval_pb2.InputConfig config file.')
-flags.DEFINE_float('IoU', 0.5,
-                    'Desired IoU to calculate the metrics')
 
 FLAGS = flags.FLAGS
-
 
 def _generate_sharded_filenames(filename):
   m = re.search(r'@(\d{1,})', filename)
@@ -99,7 +97,7 @@ def read_data_and_evaluate(input_config, eval_config):
         label_map, max_num_classes)
 
     object_detection_evaluators = evaluator.get_evaluators(
-        eval_config, categories, IoU=FLAGS.IoU)
+        eval_config, categories)
     # Support a single evaluator
     object_detection_evaluator = object_detection_evaluators[0]
 
@@ -145,10 +143,28 @@ def write_metrics(metrics, output_dir):
   """
   tf.logging.info('Writing metrics.')
 
-  with open(os.path.join(output_dir, "metrics_at_IoU_{0}.csv".format(FLAGS.IoU)), 'w') as csvfile:
+  with open(os.path.join(output_dir, 'metrics.csv'), 'w') as csvfile:
     metrics_writer = csv.writer(csvfile, delimiter=',')
     for metric_name, metric_value in metrics.items():
       metrics_writer.writerow([metric_name, str(metric_value)])
+
+
+
+
+def write_p_r(precisions, recalls, output_dir):
+  """Write precisions and recalls to the output directory.
+
+  Args:
+    precisions: A dictionary containing class names and precisions values.
+    recalls: A dictionary containing class names and recalls values.
+    output_dir: Directory to write metrics to.
+  """
+  tf.logging.info('Writing p-r.')
+
+  p_df = pd.DataFrame(dict([ (k,pd.Series(v)) for k, v in precisions.iteritems()]))
+  r_df = pd.DataFrame(dict([ (k,pd.Series(v)) for k, v in recalls.iteritems()]))
+  p_df.to_csv(os.path.join(output_dir, 'precisions.csv'), index=False)
+  r_df.to_csv(os.path.join(output_dir, 'recalls.csv'), index=False)
 
 
 def main(argv):
@@ -165,10 +181,11 @@ def main(argv):
   eval_config = configs['eval_config']
   input_config = configs['eval_input_config']
 
-  metrics = read_data_and_evaluate(input_config, eval_config)
+  metrics, precisions_dict, recalls_dict = read_data_and_evaluate(input_config, eval_config)
 
   # Save metrics
   write_metrics(metrics, FLAGS.eval_dir)
+  write_p_r(precisions_dict, recalls_dict,  FLAGS.eval_dir)
 
 
 if __name__ == '__main__':
