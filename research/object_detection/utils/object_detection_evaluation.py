@@ -224,13 +224,16 @@ class ObjectDetectionEvaluator(DetectionEvaluator):
       2. per_category_ap: category specific results with keys of the form
         'PerformanceByCategory/mAP@<matching_iou_threshold>IOU/category'.
     """
-    (per_class_ap, mean_ap, _, _, per_class_corloc, mean_corloc) = (
+    (per_class_ap, mean_ap, precisions_per_class, recalls_per_class, per_class_corloc, mean_corloc) = (
         self._evaluation.evaluate())
     pascal_metrics = {
         self._metric_prefix +
         'Precision/mAP@{}IOU'.format(self._matching_iou_threshold):
             mean_ap
     }
+    precisions_dict = dict()
+    recalls_dict = dict()
+        
     if self._evaluate_corlocs:
       pascal_metrics[self._metric_prefix + 'Precision/meanCorLoc@{}IOU'.format(
           self._matching_iou_threshold)] = mean_corloc
@@ -250,8 +253,13 @@ class ObjectDetectionEvaluator(DetectionEvaluator):
               .format(self._matching_iou_threshold,
                       category_index[idx + self._label_id_offset]['name']))
           pascal_metrics[display_name] = per_class_corloc[idx]
+          
+        precisions_dict[category_index[idx + self._label_id_offset]['name']] = \
+        precisions_per_class[idx]
+        recalls_dict[category_index[idx + self._label_id_offset]['name']] = \
+        recalls_per_class[idx]
 
-    return pascal_metrics
+    return pascal_metrics, precisions_dict, recalls_dict
 
   def clear(self):
     """Clears the state to prepare for a fresh evaluation."""
